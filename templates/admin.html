@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Paneli - Medya Yükleme Sitesi{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+    }
+    
+    .stats-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .stats-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #667eea;
+    }
+    
+    .stats-label {
+        color: #666;
+        font-size: 0.9rem;
+        margin-top: 5px;
+    }
+    
+    .media-table {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+    }
+    
+    .media-table th {
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    .media-preview-thumb {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+    
+    .file-type-badge {
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.8em;
+        font-weight: 500;
+    }
+    
+    .badge-photo {
+        background-color: #e3f2fd;
+        color: #1976d2;
+    }
+    
+    .badge-video {
+        background-color: #fff3e0;
+        color: #f57c00;
+    }
+    
+    .btn-delete {
+        background-color: #dc3545;
+        border-color: #dc3545;
+    }
+    
+    .btn-delete:hover {
+        background-color: #c82333;
+        border-color: #bd2130;
+    }
+    
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .user-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background-color: #667eea;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.8rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+    <div class="row align-items-center">
+        <div class="col-md-6">
+            <h2 class="mb-0">
+                <i class="fas fa-cog"></i> Admin Paneli
+            </h2>
+            <p class="mb-0 mt-2 opacity-75">Medya dosyalarını ve kullanıcıları yönetin</p>
+        </div>
+        <div class="col-md-6 text-md-end mt-3 mt-md-0">
+            <a href="{{ url_for('index') }}" class="btn btn-light">
+                <i class="fas fa-arrow-left"></i> Ana Sayfaya Dön
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- İstatistikler -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="stats-card">
+            <div class="stats-number">{{ media_files|length }}</div>
+            <div class="stats-label">Toplam Medya</div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stats-card">
+            <div class="stats-number">{{ media_files|selectattr('file_type', 'equalto', 'photo')|list|length }}</div>
+            <div class="stats-label">Fotoğraf</div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stats-card">
+            <div class="stats-number">{{ media_files|selectattr('file_type', 'equalto', 'video')|list|length }}</div>
+            <div class="stats-label">Video</div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stats-card">
+            <div class="stats-number">{{ users|length }}</div>
+            <div class="stats-label">Kullanıcı</div>
+        </div>
+    </div>
+</div>
+
+<!-- Medya Dosyaları Tablosu -->
+<div class="media-table">
+    <div class="p-4">
+        <h4 class="mb-4">
+            <i class="fas fa-images text-info"></i> Tüm Medya Dosyaları
+        </h4>
+        
+        {% if media_files %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Önizleme</th>
+                            <th>Dosya Adı</th>
+                            <th>Tür</th>
+                            <th>Boyut</th>
+                            <th>Kullanıcı</th>
+                            <th>Yükleme Tarihi</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for media in media_files %}
+                            <tr>
+                                <td>
+                                    {% if media.file_type == 'photo' %}
+                                        <img src="{{ url_for('uploaded_file', file_type='photos', filename=media.filename) }}" 
+                                             alt="{{ media.original_filename }}" class="media-preview-thumb">
+                                    {% else %}
+                                        <div class="media-preview-thumb d-flex align-items-center justify-content-center bg-light">
+                                            <i class="fas fa-video text-muted fa-2x"></i>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="fw-semibold" title="{{ media.original_filename }}">
+                                        {{ media.original_filename[:30] }}{% if media.original_filename|length > 30 %}...{% endif %}
+                                    </div>
+                                    <small class="text-muted">{{ media.filename }}</small>
+                                </td>
+                                <td>
+                                    <span class="file-type-badge {{ 'badge-photo' if media.file_type == 'photo' else 'badge-video' }}">
+                                        <i class="fas fa-{{ 'image' if media.file_type == 'photo' else 'video' }}"></i>
+                                        {{ 'Fotoğraf' if media.file_type == 'photo' else 'Video' }}
+                                    </span>
+                                </td>
+                                <td>{{ "%.1f"|format(media.file_size / 1024 / 1024) }} MB</td>
+                                <td>
+                                    <div class="user-info">
+                                        <div class="user-avatar">
+                                            {{ media.user.username[0]|upper }}
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold">{{ media.user.username }}</div>
+                                            <small class="text-muted">{{ media.user.email }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ media.upload_date.strftime('%d.%m.%Y %H:%M') }}</td>
+                                <td>
+                                    <a href="{{ url_for('uploaded_file', file_type='photos' if media.file_type == 'photo' else 'videos', filename=media.filename) }}" 
+                                       class="btn btn-sm btn-outline-primary" target="_blank">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('download_file', file_type='photos' if media.file_type == 'photo' else 'videos', filename=media.filename) }}" 
+                                       class="btn btn-sm btn-outline-success" download>
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                    <a href="{{ url_for('admin_delete_media', media_id=media.id) }}" 
+                                       class="btn btn-sm btn-delete" 
+                                       onclick="return confirm('Bu medya dosyasını silmek istediğinizden emin misiniz?')">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                <h5>Henüz medya dosyası yok</h5>
+                <p class="text-muted">Kullanıcılar medya yüklediğinde burada görünecektir.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Kullanıcılar -->
+<div class="media-table mt-4">
+    <div class="p-4">
+        <h4 class="mb-4">
+            <i class="fas fa-users text-success"></i> Kullanıcılar
+        </h4>
+        
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Kullanıcı Adı</th>
+                        <th>E-posta</th>
+                        <th>Kayıt Tarihi</th>
+                        <th>Medya Sayısı</th>
+                        <th>Rol</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                        <tr>
+                            <td>
+                                <div class="user-info">
+                                    <div class="user-avatar">
+                                        {{ user.username[0]|upper }}
+                                    </div>
+                                    <div class="fw-semibold">{{ user.username }}</div>
+                                </div>
+                            </td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                            <td>{{ user.media_files|length }}</td>
+                            <td>
+                                {% if user.is_admin %}
+                                    <span class="badge bg-danger">Admin</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Kullanıcı</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
